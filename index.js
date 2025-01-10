@@ -33,7 +33,7 @@ async function run() {
 
    // Assignment Related API's
    const assignmentsCollection = client.db('OnlineGroupStudy').collection('Assignments');
-   
+   const assignmentSubmition = client.db('OnlineGroupStudy').collection('SubmitedAssignments');
    
    app.post('/CreateAssignment',async(req,res) => {
     const assignment = req.body;
@@ -62,6 +62,8 @@ async function run() {
     const campaign = await assignmentsCollection.findOne(query);
     res.send(campaign);
   })
+  
+
 
   app.put('/UpdateAssignment/:id',async(req,res) => {
     const id = req.params.id;
@@ -79,6 +81,13 @@ async function run() {
       }
     }
     const result = await assignmentsCollection.updateOne(filter,Assignment,options)
+    res.send(result);
+   })
+
+   //Assignment Submition related apis
+   app.post('/AssignmentSubmition',async(req,res) => {
+    const assignment = req.body;
+    const result = await assignmentSubmition.insertOne(assignment);
     res.send(result);
    })
 
