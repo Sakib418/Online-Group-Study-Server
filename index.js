@@ -85,11 +85,73 @@ async function run() {
    })
 
    //Assignment Submition related apis
+ 
    app.post('/AssignmentSubmition',async(req,res) => {
     const assignment = req.body;
     const result = await assignmentSubmition.insertOne(assignment);
     res.send(result);
    })
+  //  assignmentSubmition
+  //  assignmentsCollection
+  app.get('/GetAssignmentDataByEmail/:email', async (req, res) => {
+    const email = req.params.email;
+
+    try {
+        const result = await assignmentSubmition.aggregate([
+           
+            { $match: { SubmiterEmail: email } },
+
+            
+            {
+                $addFields: {
+                    AssignmentID: { $toObjectId: "$AssignmentID" }
+                }
+            },
+
+           
+            {
+                $lookup: {
+                    from: 'Assignments', 
+                    localField: 'AssignmentID',    
+                    foreignField: '_id',         
+                    as: 'assignmentDetails'      
+                }
+            },
+
+            
+            { $unwind: { path: '$assignmentDetails', preserveNullAndEmptyArrays: true } },
+
+           
+            {
+                $project: {
+                    _id: 0,
+                    AssignmentTitle: '$assignmentDetails.Assignmenttitle',
+                    GoogleDocsLink: '$GooleDocsLink',
+                    Notes: '$Notes',
+                    Status: '$Status',
+                    Feedback: '$Feedback',
+                    ObtainedMarks: '$ObtainedMarks',
+                    AssignmentMarks: '$assignmentDetails.AssignmentMarks'
+                }
+            }
+        ]).toArray();
+
+        console.log('Aggregated Result:', result);  
+        res.json(result);  
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        res.status(500).send({ error: "Internal Server Error" });
+    }
+});
+
+
+
+
+
+
+
+
+
 
   } finally {
     // Ensures that the client will close when you finish/error
