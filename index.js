@@ -144,13 +144,105 @@ async function run() {
     }
 });
 
+app.get('/GetPendingAssignment', async (req, res) => {
+  
 
+  try {
+      const result = await assignmentSubmition.aggregate([
+         
+          
 
+          
+          {
+              $addFields: {
+                  AssignmentID: { $toObjectId: "$AssignmentID" }
+              }
+          },
 
+         
+          {
+              $lookup: {
+                  from: 'Assignments', 
+                  localField: 'AssignmentID',    
+                  foreignField: '_id',         
+                  as: 'assignmentDetails'      
+              }
+          },
 
+          
+          { $unwind: { path: '$assignmentDetails', preserveNullAndEmptyArrays: true } },
 
+          {
+            $match: {
+                $or: [
+                    { ObtainedMarks: { $eq: 0 } },
+                    { ObtainedMarks: { $eq: null }, },
+                    { ObtainedMarks: { $eq: "" } }
+                ]
+            }
+        },
+          {
+              $project: {
+                  _id: '$_id',
+                  AssignmentTitle: '$assignmentDetails.Assignmenttitle',
+                  GoogleDocsLink: '$GooleDocsLink',
+                  Notes: '$Notes',
+                  Status: '$Status',
+                  Feedback: '$Feedback',
+                  ObtainedMarks: '$ObtainedMarks',
+                  AssignmentMarks: '$assignmentDetails.AssignmentMarks',
+                  SubmitedBy: '$SubmitedBy',
+                  SubmiterEmail: '$SubmiterEmail'
 
+              }
+          }
+      ]).toArray();
 
+      console.log('Aggregated Result:', result);  
+      res.json(result);  
+  } catch (error) {
+      console.error("Error fetching data:", error);
+      res.status(500).send({ error: "Internal Server Error" });
+  }
+});
+
+// app.patch('/MarkedAssignment/:id',async(req,res) => {
+//   const id = req.params.id;
+//   const filter = { _id: new ObjectId(id) };
+//   const updatedSubmition = req.body;
+//   console.log(updatedSubmition);
+//   const MarkedAssignment = {
+//     $set: {
+//       Feedback: updatedSubmition.Feedback,
+//       ObtainedMarks: updatedSubmition.ObtainedMarks
+//     }
+//   };
+//   const result = await assignmentSubmition.updateOne(filter, MarkedAssignment);
+//   res.send(result);
+//  })
+
+app.patch('/MarkedAssignment/:id', async (req, res) => {
+  const id = req.params.id;
+  const filter = { _id: new ObjectId(id) };
+  const updatedSubmition = req.body;
+  //const updatedSubmition = req.body;
+  console.log(updatedSubmition);
+  const MarkedAssignment = {
+    $set: {
+      Feedback: updatedSubmition.feedback,
+      ObtainedMarks: updatedSubmition.marks,
+      Status:'Completed'
+    }
+  };
+
+  try {
+    const result = await assignmentSubmition.updateOne(filter, MarkedAssignment);
+    res.send(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: 'Internal Server Error' });
+  }
+});
 
 
   } finally {
