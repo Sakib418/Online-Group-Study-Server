@@ -1,11 +1,20 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
+const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 3000;
+const cookieParser = require('cookie-parser');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-app.use(cors());
+//app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173'],
+  credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
+
 require('dotenv').config();
+
 
 // iftekher
 // pZOSLv38IjT6iMCR
@@ -31,6 +40,18 @@ async function run() {
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
 
+   // Auth related API's
+   app.post('/jwt',async (req,res) => {
+    const user = req.body;
+    const token = jwt.sign(user,process.env.JWT_SECRET,{expiresIn:'1h'});
+    res
+    .cookie('token',token,  {
+      httpOnly:true,
+      secure: false, //if https then it should be true;
+    })
+    .send({success:true});
+   })
+     
    // Assignment Related API's
    const assignmentsCollection = client.db('OnlineGroupStudy').collection('Assignments');
    const assignmentSubmition = client.db('OnlineGroupStudy').collection('SubmitedAssignments');
