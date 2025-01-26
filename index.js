@@ -20,6 +20,30 @@ require('dotenv').config();
 // pZOSLv38IjT6iMCR
 
 
+
+const verifyToken = (req, res, next) => {
+  
+  const token = req?.cookies?.token;
+
+  if (!token) {
+    return res.status(401).send({ message: 'Unauthorized access, no token provided' });
+  }
+
+  // Verify the token
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      if (err.name === 'TokenExpiredError') {
+        return res.status(401).send({ message: 'Token expired' });
+      }
+      return res.status(401).send({ message: 'Invalid token' });
+    }
+
+    
+    req.user = decoded; 
+    next();
+  });
+};
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.aine5.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -114,8 +138,13 @@ async function run() {
    })
   //  assignmentSubmition
   //  assignmentsCollection
-  app.get('/GetAssignmentDataByEmail/:email', async (req, res) => {
+  app.get('/GetAssignmentDataByEmail/:email',verifyToken, async (req, res) => {
     const email = req.params.email;
+    
+    if(req.user.email !== req.params.email){
+      return res.status(403).send({message: 'forbidden access'});
+    }
+    
 
     try {
         const result = await assignmentSubmition.aggregate([
@@ -165,13 +194,14 @@ async function run() {
     }
 });
 
-app.get('/GetPendingAssignment', async (req, res) => {
+app.get('/GetPendingAssignment',verifyToken, async (req, res) => {
   
 
   try {
+    console.log('Token',req.cookies);
       const result = await assignmentSubmition.aggregate([
          
-          
+        
 
           
           {
