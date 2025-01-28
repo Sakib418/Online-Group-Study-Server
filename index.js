@@ -87,7 +87,17 @@ async function run() {
    })
 
    app.get('/AllAssignments', async(req,res) => {
-    const cursor = assignmentsCollection.find();
+    
+    const { difficulty } = req.query;
+
+    let filter = {};
+    if (difficulty) {
+        filter = { DifficultyLevel: difficulty };
+    }
+
+
+
+    const cursor = assignmentsCollection.find(filter);
     const result = await cursor.toArray();
     res.send(result);
    })
