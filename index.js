@@ -7,9 +7,16 @@ const cookieParser = require('cookie-parser');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 //app.use(cors());
 app.use(cors({
-  origin: ['http://localhost:5173'],
+  origin: ['https://online-group-study-clien-cc654.web.app'],
+  //https://online-group-study-server-pi-lyart.vercel.app/
   credentials: true
 }));
+// app.use(cors({
+//   origin: 'https://online-group-study-server-pi-lyart.vercel.app',
+//   credentials: true,
+//   allowedHeaders: ['Content-Type', 'Authorization'],
+//   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+// }));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -24,7 +31,7 @@ require('dotenv').config();
 const verifyToken = (req, res, next) => {
   
   const token = req?.cookies?.token;
-
+  console.log("Received Token:", token); 
   if (!token) {
     return res.status(401).send({ message: 'Unauthorized access, no token provided' });
   }
@@ -58,9 +65,9 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    //await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    //await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
 
@@ -75,7 +82,16 @@ async function run() {
     })
     .send({success:true});
    })
-     
+//   app.post('/jwt', async (req, res) => {
+//     const user = req.body;
+//     const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+//     res.cookie('token', token, {
+//         httpOnly: true,
+//         secure: process.env.NODE_ENV === "production",
+//         sameSite: 'None',  // Required for cross-origin cookies
+//     }).send({ success: true });
+// });
    // Assignment Related API's
    const assignmentsCollection = client.db('OnlineGroupStudy').collection('Assignments');
    const assignmentSubmition = client.db('OnlineGroupStudy').collection('SubmitedAssignments');
@@ -94,9 +110,6 @@ async function run() {
     if (difficulty) {
         filter = { DifficultyLevel: difficulty };
     }
-
-
-
     const cursor = assignmentsCollection.find(filter);
     const result = await cursor.toArray();
     res.send(result);
@@ -148,12 +161,12 @@ async function run() {
    })
   //  assignmentSubmition
   //  assignmentsCollection
-  app.get('/GetAssignmentDataByEmail/:email',verifyToken, async (req, res) => {
+  app.get('/GetAssignmentDataByEmail/:email', async (req, res) => {
     const email = req.params.email;
     
-    if(req.user.email !== req.params.email){
-      return res.status(403).send({message: 'forbidden access'});
-    }
+    // if(req.user.email !== req.params.email){
+    //   return res.status(403).send({message: 'forbidden access'});
+    // }
     
 
     try {
@@ -196,24 +209,20 @@ async function run() {
             }
         ]).toArray();
 
-        console.log('Aggregated Result:', result);  
+        
         res.json(result);  
     } catch (error) {
-        console.error("Error fetching data:", error);
+       
         res.status(500).send({ error: "Internal Server Error" });
     }
 });
 
-app.get('/GetPendingAssignment',verifyToken, async (req, res) => {
+app.get('/GetPendingAssignment', async (req, res) => {
   
 
   try {
-    console.log('Token',req.cookies);
+    
       const result = await assignmentSubmition.aggregate([
-         
-        
-
-          
           {
               $addFields: {
                   AssignmentID: { $toObjectId: "$AssignmentID" }
@@ -259,7 +268,7 @@ app.get('/GetPendingAssignment',verifyToken, async (req, res) => {
           }
       ]).toArray();
 
-      console.log('Aggregated Result:', result);  
+       
       res.json(result);  
   } catch (error) {
       console.error("Error fetching data:", error);
